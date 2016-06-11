@@ -34,7 +34,8 @@ func main() {
 		fset := token.NewFileSet()
 		f, err := parser.ParseFile(fset, file, nil, parser.ParseComments)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(file, err)
+			continue
 		}
 
 		altered := blankId(f)
@@ -110,7 +111,10 @@ func scan(x *funcDescription) bool {
 
 	// store receiver
 	if x.Recv != nil {
-		vars[x.Recv.List[0].Names[0].Name] = &v{ident: x.Recv.List[0].Names[0]}
+		// only if a named receiver
+		if len(x.Recv.List[0].Names) > 0 {
+			vars[x.Recv.List[0].Names[0].Name] = &v{ident: x.Recv.List[0].Names[0]}
+		}
 	}
 
 	// store function params
@@ -139,12 +143,14 @@ func scan(x *funcDescription) bool {
 		case *ast.Ident:
 			if x.Name != "_" {
 				if iv, exists := vars[x.Name]; exists {
-					// matching ident declaration means same var
-					if f, ok := x.Obj.Decl.(*ast.Field); ok {
-						for _, ident := range f.Names {
-							if ident == iv.ident {
-								iv.used = true
-								return true
+					if x.Obj != nil {
+						// matching ident declaration means same var
+						if f, ok := x.Obj.Decl.(*ast.Field); ok && f != nil {
+							for _, ident := range f.Names {
+								if ident == iv.ident {
+									iv.used = true
+									return true
+								}
 							}
 						}
 					}

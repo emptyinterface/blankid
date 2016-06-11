@@ -15,6 +15,10 @@ func TestBlankId(t *testing.T) {
 		input = `
 package main
 
+type Struct struct {
+	A int
+}
+
 func Add(a,b,c int) int {
 	return a+b
 }
@@ -31,6 +35,8 @@ func (e Example) Sub(a,b int) int {
 
 func (e Example) Empty() {}
 
+func (*Example) NoReceiver() {}
+
 func missingRet() (err error, ok bool) {
 	ok = true
 	return
@@ -46,10 +52,18 @@ func main() {
 	r(func(f recurse, n int) {
 		f(r)
 	})
+
+	func(s *Struct) {
+		fmt.Println(s.A)
+	} (&Struct{})
 }
 
 `
 		output = `package main
+
+type Struct struct {
+	A int
+}
 
 func Add(a, b, _ int) int {
 	return a + b
@@ -67,6 +81,8 @@ func (_ Example) Sub(a, b int) int {
 
 func (_ Example) Empty()	{}
 
+func (*Example) NoReceiver()	{}
+
 func missingRet() (_ error, ok bool) {
 	ok = true
 	return
@@ -82,6 +98,10 @@ func main() {
 	r(func(f recurse, _ int) {
 		f(r)
 	})
+
+	func(s *Struct) {
+		fmt.Println(s.A)
+	}(&Struct{})
 }
 `
 	)
