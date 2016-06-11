@@ -17,7 +17,11 @@ type funcDescription struct {
 	Body *ast.BlockStmt
 }
 
-var overwrite = flag.Bool("w", false, "overwrite file with changes")
+var (
+	receivers = flag.Bool("recv", false, "include receivers in scan")
+	returns   = flag.Bool("ret", false, "include returns in scan")
+	overwrite = flag.Bool("w", false, "overwrite file with changes")
+)
 
 func main() {
 
@@ -110,7 +114,7 @@ func scan(x *funcDescription) bool {
 	vars := map[string]*v{}
 
 	// store receiver
-	if x.Recv != nil {
+	if *receivers && x.Recv != nil {
 		// only if a named receiver
 		if len(x.Recv.List[0].Names) > 0 {
 			vars[x.Recv.List[0].Names[0].Name] = &v{ident: x.Recv.List[0].Names[0]}
@@ -127,7 +131,7 @@ func scan(x *funcDescription) bool {
 	}
 
 	// store return params
-	if x.Type.Results != nil {
+	if *returns && x.Type.Results != nil {
 		for _, r := range x.Type.Results.List {
 			for _, ident := range r.Names {
 				if ident.Name != "_" {

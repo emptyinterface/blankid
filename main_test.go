@@ -112,6 +112,10 @@ func main() {
 		t.Error(err)
 	}
 
+	// set all flags
+	*receivers = true
+	*returns = true
+
 	if altered := blankId(f); !altered {
 		t.Errorf("Expected altered to be true")
 	}
