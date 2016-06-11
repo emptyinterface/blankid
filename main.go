@@ -28,7 +28,7 @@ func main() {
 	flag.Parse()
 
 	if flag.NArg() == 0 {
-		fmt.Println("Usage:", os.Args[0], "[-w] <file[s]>")
+		fmt.Println("Usage:", os.Args[0], "[-w] [-recv] [-ret] <file[s]>")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}

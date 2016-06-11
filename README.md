@@ -6,8 +6,13 @@ a simple tool to replace unused function params with the blank id "_".
 ### Usage:
 
 ```
-Usage: blankid [-w] <file[s]>
-  -w	overwrite file with changes
+Usage: blankid [-w] [-recv] [-ret] <file[s]>
+  -recv
+      include receivers in scan
+  -ret
+      include returns in scan
+  -w
+      overwrite file with changes
 ```
 
 ###Before:
