@@ -37,31 +37,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		var altered bool
-
-		ast.Inspect(f, func(n ast.Node) bool {
-
-			switch x := n.(type) {
-			case *ast.FuncDecl:
-				if changed := scan(&funcDescription{
-					Recv: x.Recv,
-					Type: x.Type,
-					Body: x.Body,
-				}); changed {
-					altered = true
-				}
-			case *ast.FuncLit:
-				if changed := scan(&funcDescription{
-					Type: x.Type,
-					Body: x.Body,
-				}); changed {
-					altered = true
-				}
-			}
-
-			return true
-
-		})
+		altered := blankId(f)
 
 		if *overwrite {
 			if altered {
@@ -84,6 +60,38 @@ func main() {
 		}
 
 	}
+
+}
+
+func blankId(f ast.Node) bool {
+
+	var altered bool
+
+	ast.Inspect(f, func(n ast.Node) bool {
+
+		switch x := n.(type) {
+		case *ast.FuncDecl:
+			if changed := scan(&funcDescription{
+				Recv: x.Recv,
+				Type: x.Type,
+				Body: x.Body,
+			}); changed {
+				altered = true
+			}
+		case *ast.FuncLit:
+			if changed := scan(&funcDescription{
+				Type: x.Type,
+				Body: x.Body,
+			}); changed {
+				altered = true
+			}
+		}
+
+		return true
+
+	})
+
+	return altered
 
 }
 

@@ -1,0 +1,108 @@
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"go/parser"
+	"go/printer"
+	"go/token"
+	"testing"
+)
+
+func TestBlankId(t *testing.T) {
+
+	const (
+		input = `
+package main
+
+func Add(a,b,c int) int {
+	return a+b
+}
+
+type Example int
+
+func (e Example) Add(a,b int) int {
+	return int(e)+a
+}
+
+func (e Example) Sub(a,b int) int {
+	return a-b
+}
+
+func (e Example) Empty() {}
+
+func missingRet() (err error, ok bool) {
+	ok = true
+	return
+}
+
+func main() {
+	func(a,b string) string {
+		return a
+	}("dog","cat")
+
+	type recurse func(f recurse, n int)
+	var r recurse
+	r(func(f recurse, n int) {
+		f(r)
+	})
+}
+
+`
+		output = `package main
+
+func Add(a, b, _ int) int {
+	return a + b
+}
+
+type Example int
+
+func (e Example) Add(a, _ int) int {
+	return int(e) + a
+}
+
+func (_ Example) Sub(a, b int) int {
+	return a - b
+}
+
+func (_ Example) Empty()	{}
+
+func missingRet() (_ error, ok bool) {
+	ok = true
+	return
+}
+
+func main() {
+	func(a, _ string) string {
+		return a
+	}("dog", "cat")
+
+	type recurse func(f recurse, n int)
+	var r recurse
+	r(func(f recurse, _ int) {
+		f(r)
+	})
+}
+`
+	)
+
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, "main.go", input, parser.ParseComments)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if altered := blankId(f); !altered {
+		t.Errorf("Expected altered to be true")
+	}
+
+	var buf bytes.Buffer
+	if err := printer.Fprint(&buf, fset, f); err != nil {
+		t.Error(err)
+	}
+
+	if buf.String() != output {
+		fmt.Println(buf.String())
+	}
+
+}
