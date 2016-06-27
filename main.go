@@ -106,18 +106,13 @@ func scan(x *funcDescription) bool {
 		return false
 	}
 
-	type v struct {
-		ident *ast.Ident
-		used  bool
-	}
-
-	vars := map[string]*v{}
+	vars := map[*ast.Ident]bool{}
 
 	// store receiver
 	if *receivers && x.Recv != nil {
 		// only if a named receiver
 		if len(x.Recv.List[0].Names) > 0 {
-			vars[x.Recv.List[0].Names[0].Name] = &v{ident: x.Recv.List[0].Names[0]}
+			vars[x.Recv.List[0].Names[0]] = false
 		}
 	}
 
@@ -125,7 +120,7 @@ func scan(x *funcDescription) bool {
 	for _, p := range x.Type.Params.List {
 		for _, ident := range p.Names {
 			if ident.Name != "_" {
-				vars[ident.Name] = &v{ident: ident}
+				vars[ident] = false
 			}
 		}
 	}
@@ -135,7 +130,7 @@ func scan(x *funcDescription) bool {
 		for _, r := range x.Type.Results.List {
 			for _, ident := range r.Names {
 				if ident.Name != "_" {
-					vars[ident.Name] = &v{ident: ident}
+					vars[ident] = false
 				}
 			}
 		}
@@ -143,19 +138,13 @@ func scan(x *funcDescription) bool {
 
 	// scan for idents that are used in the function body
 	ast.Inspect(x.Body, func(n ast.Node) bool {
-		switch x := n.(type) {
-		case *ast.Ident:
-			if x.Name != "_" {
-				if iv, exists := vars[x.Name]; exists {
-					if x.Obj != nil {
-						// matching ident declaration means same var
-						if f, ok := x.Obj.Decl.(*ast.Field); ok && f != nil {
-							for _, ident := range f.Names {
-								if ident == iv.ident {
-									iv.used = true
-									return true
-								}
-							}
+		if x, ok := n.(*ast.Ident); ok {
+			if x.Obj != nil && x.Name != "_" {
+				if f, ok := x.Obj.Decl.(*ast.Field); ok && f != nil {
+					for _, ident := range f.Names {
+						if used, exists := vars[ident]; exists && !used {
+							vars[ident] = true
+							return true
 						}
 					}
 				}
@@ -167,9 +156,9 @@ func scan(x *funcDescription) bool {
 	var altered bool
 
 	// set to _ where unused
-	for _, v := range vars {
-		if !v.used {
-			v.ident.Name = "_"
+	for ident, used := range vars {
+		if !used {
+			ident.Name = "_"
 			altered = true
 		}
 	}
